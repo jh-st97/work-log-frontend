@@ -129,3 +129,102 @@
 .auth-switch a:hover {
 	text-decoration: underline;
 }
+
+/* 로그인 후 화면의 상단바 (Layout.tsx) */
+.app-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 24px;
+	border-bottom: 1px solid var(--border);
+}
+
+.app-header .brand {
+	font-weight: 700;
+	font-size: 16px;
+	color: var(--text-h);
+}
+
+/* 목록 화면 공통 레이아웃 (프로젝트, 태그, 업무 시스템 등에서 재사용) */
+.page {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 32px 24px;
+}
+
+.page-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 24px;
+}
+
+.page-header h1 {
+	margin: 0;
+	text-align: left;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.list-item {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	padding: 18px 20px;
+	text-align: left;
+}
+
+.list-item-top {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.list-item-title {
+	font-size: 16px;
+	font-weight: 600;
+	margin: 0 0 4px;
+}
+
+.list-item-desc {
+	font-size: 14px;
+	color: var(--text);
+	margin: 0 0 8px;
+}
+
+.list-item-meta {
+	font-size: 13px;
+	color: var(--text);
+	opacity: 0.8;
+	margin: 0;
+}
+
+.empty-state {
+	text-align: center;
+	color: var(--text);
+	padding: 40px 0;
+}
+
+/* 보관·삭제처럼 신중해야 하는 동작에 쓰는 버튼 */
+.btn-danger {
+	flex-shrink: 0;
+	padding: 8px 14px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: transparent;
+	color: #e5484d;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.btn-danger:hover {
+	border-color: #e5484d;
+	background: rgba(229, 72, 77, 0.08);
+}
