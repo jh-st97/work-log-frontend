@@ -145,6 +145,25 @@
 	color: var(--text-h);
 }
 
+/* 상단바의 메뉴 링크. 지금 보고 있는 페이지면 react-router가 자동으로 .active를 붙여준다 */
+.nav-link {
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--text);
+	text-decoration: none;
+	padding-bottom: 2px;
+	border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover {
+	color: var(--text-h);
+}
+
+.nav-link.active {
+	color: var(--accent);
+	border-bottom-color: var(--accent);
+}
+
 /* 목록 화면 공통 레이아웃 (프로젝트, 태그, 업무 시스템 등에서 재사용) */
 .page {
 	max-width: 720px;

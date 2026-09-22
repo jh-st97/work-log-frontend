@@ -14,6 +14,14 @@ export function createProject(request: ProjectRequest): Promise<ProjectResponse>
 	});
 }
 
+// PATCH /api/projects/{id} : 프로젝트 수정
+export function updateProject(id: number, request: ProjectRequest): Promise<ProjectResponse> {
+	return apiFetch<ProjectResponse>(`/api/projects/${id}`, {
+		method: "PATCH",
+		body: JSON.stringify(request),
+	});
+}
+
 // DELETE /api/projects/{id} : 실제로는 보관 처리
 export function archiveProject(id: number): Promise<void> {
 	return apiFetch<void>(`/api/projects/${id}`, { method: "DELETE" });

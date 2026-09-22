@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
+import { TagsPage } from "./pages/TagsPage";
 import { RequireAuth } from "./auth/RequireAuth";
 import { Layout } from "./components/Layout";
 
@@ -23,6 +24,7 @@ function App() {
 				}
 			>
 				<Route index element={<ProjectsPage />} />
+				<Route path="tags" element={<TagsPage />} />
 			</Route>
 		</Routes>
 	);

@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import { clearToken } from "../auth/token";
 
 // 로그인 후 보이는 모든 화면의 공통 틀.
@@ -15,7 +15,18 @@ export function Layout() {
 	return (
 		<div>
 			<header className="app-header">
-				<span className="brand">work-log</span>
+				<div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+					<span className="brand">work-log</span>
+					{/* NavLink는 Link와 같지만, 지금 보고 있는 경로와 일치하면 "active" 클래스가 자동으로 붙는다 */}
+					<nav style={{ display: "flex", gap: 18 }}>
+						<NavLink to="/" end className="nav-link">
+							프로젝트
+						</NavLink>
+						<NavLink to="/tags" className="nav-link">
+							태그
+						</NavLink>
+					</nav>
+				</div>
 				<button className="btn-secondary" onClick={handleLogout}>
 					로그아웃
 				</button>

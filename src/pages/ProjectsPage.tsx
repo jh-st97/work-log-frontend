@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { createProject, getProjects, archiveProject } from "../api/projects";
+import { createProject, getProjects, archiveProject, updateProject } from "../api/projects";
 import type { ProjectResponse } from "../types/project";
 import { ApiError } from "../api/client";
 
@@ -9,7 +9,7 @@ function getTodayString() {
 	const year = today.getFullYear();
 	const month = String(today.getMonth() + 1).padStart(2, "0");
 	const day = String(today.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`; 
+	return `${year}-${month}-${day}`;
 }
 
 export function ProjectsPage() {
@@ -19,6 +19,8 @@ export function ProjectsPage() {
 
 	// 새 프로젝트 등록 폼을 보여줄지 여부 (버튼을 누르면 토글)
 	const [showForm, setShowForm] = useState(false);
+	// null이면 "새로 등록" 모드, 값이 있으면 "그 프로젝트를 수정하는" 모드
+	const [editingId, setEditingId] = useState<number | null>(null);
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [startDate, setStartDate] = useState(getTodayString());
@@ -38,30 +40,60 @@ export function ProjectsPage() {
 			.finally(() => setLoading(false));
 	}
 
-	async function handleCreate(e: FormEvent) {
+	// "+ 새 프로젝트" 버튼: 빈 폼을 연다
+	function openCreateForm() {
+		setEditingId(null);
+		setName("");
+		setDescription("");
+		setStartDate(getTodayString());
+		setEndDate("");
+		setFormError(null);
+		setShowForm(true);
+	}
+
+	// 카드의 "수정" 버튼: 그 프로젝트의 값으로 폼을 채워서 연다
+	function openEditForm(project: ProjectResponse) {
+		setEditingId(project.id);
+		setName(project.name);
+		setDescription(project.description ?? "");
+		setStartDate(project.startDate ?? "");
+		setEndDate(project.endDate ?? "");
+		setFormError(null);
+		setShowForm(true);
+	}
+
+	function closeForm() {
+		setShowForm(false);
+		setEditingId(null);
+	}
+
+	async function handleSubmit(e: FormEvent) {
 		e.preventDefault();
 		setFormError(null);
 		setSubmitting(true);
 
-		try {
-			// 빈 문자열은 null로 바꿔서 보낸다 (선택 입력 항목이라서)
-			await createProject({
-				name,
-				description: description || null,
-				startDate: startDate || null,
-				endDate: endDate || null,
-			});
+		const request = {
+			name,
+			description: description || null,
+			startDate: startDate || null,
+			endDate: endDate || null,
+		};
 
-			// 성공하면 폼을 비우고 닫은 뒤, 목록을 새로 불러온다
-			setName("");
-			setDescription("");
-			setStartDate(getTodayString());
-			setEndDate("");
-			setShowForm(false);
+		try {
+			// editingId가 있으면 수정, 없으면 새로 등록
+			if (editingId !== null) {
+				await updateProject(editingId, request);
+			} else {
+				await createProject(request);
+			}
+
+			closeForm();
 			loadProjects();
 		} catch (e) {
 			setFormError(
-				e instanceof ApiError ? e.message : "프로젝트 등록 중 문제가 발생했습니다.",
+				e instanceof ApiError
+					? e.message
+					: `프로젝트 ${editingId !== null ? "수정" : "등록"} 중 문제가 발생했습니다.`,
 			);
 		} finally {
 			setSubmitting(false);
@@ -89,14 +121,18 @@ export function ProjectsPage() {
 				<button
 					className="btn-primary"
 					style={{ width: "auto" }}
-					onClick={() => setShowForm((v) => !v)}
+					onClick={() => (showForm ? closeForm() : openCreateForm())}
 				>
 					{showForm ? "취소" : "+ 새 프로젝트"}
 				</button>
 			</div>
 
 			{showForm && (
-				<form onSubmit={handleCreate} className="card" style={{ maxWidth: "100%", marginBottom: 24 }}>
+				<form onSubmit={handleSubmit} className="card" style={{ maxWidth: "100%", marginBottom: 24 }}>
+					<h2 style={{ fontSize: 16, textAlign: "left", margin: "0 0 16px" }}>
+						{editingId !== null ? "프로젝트 수정" : "새 프로젝트 등록"}
+					</h2>
+
 					<div className="field">
 						<label htmlFor="name">이름</label>
 						<input
@@ -140,7 +176,7 @@ export function ProjectsPage() {
 					{formError && <p className="error-text">{formError}</p>}
 
 					<button type="submit" className="btn-primary" disabled={submitting}>
-						{submitting ? "등록 중..." : "등록"}
+						{submitting ? "저장 중..." : editingId !== null ? "수정 완료" : "등록"}
 					</button>
 				</form>
 			)}
@@ -167,9 +203,14 @@ export function ProjectsPage() {
 									</p>
 								)}
 							</div>
-							<button className="btn-danger" onClick={() => handleArchive(project.id)}>
-								보관
-							</button>
+							<div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+								<button className="btn-secondary" onClick={() => openEditForm(project)}>
+									수정
+								</button>
+								<button className="btn-danger" onClick={() => handleArchive(project.id)}>
+									보관
+								</button>
+							</div>
 						</div>
 					</div>
 				))}
