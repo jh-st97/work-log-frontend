@@ -25,6 +25,9 @@ export function Layout() {
 						<NavLink to="/tags" className="nav-link">
 							태그
 						</NavLink>
+						<NavLink to="/systems" className="nav-link">
+							업무 시스템
+						</NavLink>
 					</nav>
 				</div>
 				<button className="btn-secondary" onClick={handleLogout}>

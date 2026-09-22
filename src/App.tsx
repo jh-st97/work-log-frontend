@@ -3,6 +3,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { TagsPage } from "./pages/TagsPage";
+import { WorkSystemsPage } from "./pages/WorkSystemsPage";
 import { RequireAuth } from "./auth/RequireAuth";
 import { Layout } from "./components/Layout";
 
@@ -25,6 +26,7 @@ function App() {
 			>
 				<Route index element={<ProjectsPage />} />
 				<Route path="tags" element={<TagsPage />} />
+				<Route path="systems" element={<WorkSystemsPage />} />
 			</Route>
 		</Routes>
 	);
