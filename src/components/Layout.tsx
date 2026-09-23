@@ -28,6 +28,9 @@ export function Layout() {
 						<NavLink to="/systems" className="nav-link">
 							업무 시스템
 						</NavLink>
+						<NavLink to="/tasks" className="nav-link">
+							업무
+						</NavLink>
 					</nav>
 				</div>
 				<button className="btn-secondary" onClick={handleLogout}>

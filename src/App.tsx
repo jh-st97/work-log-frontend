@@ -6,6 +6,7 @@ import { TagsPage } from "./pages/TagsPage";
 import { WorkSystemsPage } from "./pages/WorkSystemsPage";
 import { RequireAuth } from "./auth/RequireAuth";
 import { Layout } from "./components/Layout";
+import { TasksPage } from "./pages/TasksPage";
 
 function App() {
 	return (
@@ -27,6 +28,7 @@ function App() {
 				<Route index element={<ProjectsPage />} />
 				<Route path="tags" element={<TagsPage />} />
 				<Route path="systems" element={<WorkSystemsPage />} />
+				<Route path="tasks" element={<TasksPage />} />
 			</Route>
 		</Routes>
 	);

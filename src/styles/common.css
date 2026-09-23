@@ -229,15 +229,16 @@
 	padding: 40px 0;
 }
 
-/* 보관·삭제처럼 신중해야 하는 동작에 쓰는 버튼 */
+/* 보관·삭제처럼 신중해야 하는 동작에 쓰는 버튼. 옆에 나란히 놓이는 .btn-secondary와
+   크기를 맞춘다(색만 빨간색으로 구분). */
 .btn-danger {
 	flex-shrink: 0;
-	padding: 8px 14px;
+	padding: 10px 18px;
 	border: 1px solid var(--border);
-	border-radius: 8px;
+	border-radius: 10px;
 	background: transparent;
 	color: #e5484d;
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: 500;
 	cursor: pointer;
 	transition: border-color 0.15s, background 0.15s;
@@ -246,4 +247,82 @@
 .btn-danger:hover {
 	border-color: #e5484d;
 	background: rgba(229, 72, 77, 0.08);
+}
+
+/* 업무 카드 안의 태그·시스템 알약 */
+.chip {
+	font-size: 12px;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--accent-bg);
+	color: var(--text-h);
+	border: 1px solid var(--accent-border);
+}
+
+/* 태그·업무 시스템 체크박스를 알약 모양 토글 버튼처럼 보이게 한다.
+   실제 <input type="checkbox">는 그대로 두고 화면에서만 숨긴다 — 키보드·스크린리더 접근성은 유지된다. */
+.chip-toggle {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 14px;
+	border-radius: 999px;
+	border: 1px solid var(--border);
+	background: var(--bg);
+	color: var(--text);
+	font-size: 13px;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s, color 0.15s;
+	user-select: none;
+}
+
+.chip-toggle:hover {
+	border-color: var(--accent);
+}
+
+.chip-toggle input {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.chip-toggle.checked {
+	background: var(--accent-bg);
+	border-color: var(--accent-border);
+	color: var(--text-h);
+	font-weight: 600;
+}
+
+/* select(드롭다운)도 input과 같은 느낌으로 */
+.field select {
+	padding: 11px 14px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	font-size: 15px;
+	background: var(--bg);
+	color: var(--text-h);
+	outline: none;
+}
+
+/* 업무 카드 안의 상태 선택 드롭다운. 옆에 나란히 놓이는 .btn-secondary와
+   높이·모서리를 맞춰서 따로 튀어 보이지 않게 한다.
+   <select>와 <button>은 브라우저 기본 스타일이 달라서 padding만 맞춰서는
+   높이가 살짝 어긋난다 — height를 .btn-secondary 실측값(41px)으로 직접 맞춘다. */
+.status-select {
+	height: 41px;
+	padding: 0 14px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	font-size: 14px;
+	font-weight: 500;
+	background: var(--bg);
+	color: var(--text-h);
+	outline: none;
+	cursor: pointer;
+}
+
+.status-select:hover {
+	border-color: var(--accent);
 }
