@@ -7,6 +7,7 @@ import { WorkSystemsPage } from "./pages/WorkSystemsPage";
 import { RequireAuth } from "./auth/RequireAuth";
 import { Layout } from "./components/Layout";
 import { TasksPage } from "./pages/TasksPage";
+import { DailyLogPage } from "./pages/DailyLogPage";
 
 function App() {
 	return (
@@ -29,6 +30,7 @@ function App() {
 				<Route path="tags" element={<TagsPage />} />
 				<Route path="systems" element={<WorkSystemsPage />} />
 				<Route path="tasks" element={<TasksPage />} />
+				<Route path="logs" element={<DailyLogPage />} />
 			</Route>
 		</Routes>
 	);

@@ -26,7 +26,9 @@ src/
 │   ├── tags.ts           ← getTags, createTag, updateTag, deleteTag
 │   ├── workSystems.ts     ← getWorkSystems, createWorkSystem, updateWorkSystem, deleteWorkSystem
 │   ├── tasks.ts            ← getTasks, getTask, createTask, updateTask, changeTaskStatus, archiveTask
-│   └── taskResults.ts      ← getTaskResults, createTaskResult, updateTaskResult, deleteTaskResult (업무 밑에 걸린 성과 항목)
+│   ├── taskResults.ts      ← getTaskResults, createTaskResult, updateTaskResult, deleteTaskResult (업무 밑에 걸린 성과 항목)
+│   ├── dailyLogs.ts         ← getDailyLog, saveDailyLog (하루 회고 조회·저장)
+│   └── taskLogs.ts          ← createTaskLog, updateTaskLog, deleteTaskLog (일일 기록 밑에 걸린 진행 메모)
 ├── auth/
 │   ├── token.ts          ← localStorage 토큰 저장/조회/삭제 (saveToken, getToken, clearToken, isLoggedIn)
 │   └── RequireAuth.tsx   ← 로그인 안 했으면 /login으로 리다이렉트하는 라우트 가드
@@ -38,14 +40,17 @@ src/
 │   ├── tag.ts
 │   ├── workSystem.ts
 │   ├── task.ts             ← TaskStatus/TaskPriority(문자열 유니온), TaskRequest/TaskResponse/TaskStatusRequest
-│   └── taskResult.ts        ← TaskResultRequest/TaskResultResponse
+│   ├── taskResult.ts        ← TaskResultRequest/TaskResultResponse
+│   ├── dailyLog.ts           ← DailyLogRequest/DailyLogResponse(taskLogs 목록 포함)
+│   └── taskLog.ts            ← TaskLogRequest/TaskLogUpdateRequest/TaskLogResponse
 ├── pages/
 │   ├── LoginPage.tsx
 │   ├── SignupPage.tsx
 │   ├── ProjectsPage.tsx   ← 조회/등록/수정/보관. 등록 폼을 재사용해 수정 모드 지원(editingId)
 │   ├── TagsPage.tsx        ← 조회/등록/수정(이름 클릭 → inline 편집, Enter 저장·Esc 취소)/삭제
 │   ├── WorkSystemsPage.tsx  ← TagsPage와 거의 같은 구조(+ description 필드)
-│   └── TasksPage.tsx         ← 조회/등록/수정/보관, 태그·업무시스템 다중 선택(체크박스), 카드에서 바로 상태 변경(드롭다운), 수정 모드일 때만 보이는 성과 항목(TaskResult) 목록·추가·수정·삭제
+│   ├── TasksPage.tsx         ← 조회/등록/수정/보관, 태그·업무시스템 다중 선택(체크박스), 카드에서 바로 상태 변경(드롭다운), 수정 모드일 때만 보이는 성과 항목(TaskResult) 목록·추가·수정·삭제
+│   └── DailyLogPage.tsx       ← 하루 일지 화면. 날짜 이동(이전/다음/오늘), 회고 저장(upsert), 그날의 진행 메모 목록·추가·수정·삭제
 ├── styles/
 │   └── common.css         ← 재사용 디자인 부품(.page-center, .card, .field, .btn-primary, .btn-secondary, .btn-danger, .page, .list, .list-item, .nav-link, .chip, .chip-toggle, .status-select 등)
 ├── index.css               ← CSS 변수(색상, 라이트/다크 모드), Vite 기본 랜딩페이지 레이아웃은 제거함
@@ -73,11 +78,21 @@ src/
 - **버튼·드롭다운 높이 통일**: 상태 드롭다운을 처음 만들었을 때 `.btn-secondary`보다 작아서 "혼자 튀어 보인다"는 피드백을 받고 높이를 맞춤(41px). 맞추다 보니 `.btn-danger`(보관·삭제 버튼)가 원래 다른 버튼들보다 작게 디자인돼 있던 게 드러나서, 사용자 요청으로 `.btn-danger`도 `.btn-secondary`와 같은 크기로 통일함 — 이 변경은 보관·삭제 버튼을 쓰는 모든 화면(프로젝트·태그·업무시스템·업무)에 공통 적용됨.
 - 테스트: `npx tsc --noEmit` 통과 + Claude의 내장 브라우저로 등록/수정/삭제/상태변경 실제 요청까지 확인. `window.confirm()` 확인창만은 자동화로 못 눌러서 `window.confirm`을 임시로 덮어써서 우회 확인함.
 
+## 완료 (2026-09-23, 기획서 3단계 화면 — DailyLogPage)
+- **하루 일지 화면(`DailyLogPage`)**: `<input type="date">`로 날짜를 고르면(이전 날/다음 날/오늘 버튼도 있음) 그날 일지를 불러온다. 회고는 textarea + 저장 버튼(`PUT`이 upsert라 저장 로직이 하나로 끝남). 진행 메모는 목록 + 업무 선택(드롭다운)·내용·소요 시간을 입력하는 추가/수정 폼.
+- **아직 아무것도 기록 안 한 날(404) 처리**: `getDailyLog`가 404(`DAILY_LOG_NOT_FOUND`)를 던지면 에러로 취급하지 않고 회고·진행 메모 둘 다 빈 상태로 보여준다 — 기록 없는 날이 정상적인 상태라서.
+- `common.css`에 `.field textarea`(회고·진행 메모 내용 입력칸), `.field-date`(날짜 이동 바의 날짜 입력, `.status-select`와 같은 41px 높이로 통일) 추가.
+- App.tsx에 `/logs` 라우트, Layout.tsx에 "일일 기록" 메뉴 추가.
+- **[도구 참고] Claude 브라우저의 `read_page`가 폼 아래쪽 요소(textarea, 등록 버튼)를 접근성 트리에서 못 잡는 경우가 있었음** — `get_page_text`로는 라벨이 다 보이는데 `read_page`만 누락됨. 이럴 땐 `document.getElementById(...)`로 직접 채우고 `find`로 버튼만 찾아 클릭하는 방식으로 우회함. 다음에 비슷한 증상 나오면 같은 방법 쓰면 됨.
+- 테스트: `npx tsc --noEmit` 통과 + 실제 브라우저로 날짜 이동/회고 저장/진행 메모 등록·수정·삭제 전부 확인.
+
+**이걸로 기획서 3단계(DailyLog, TaskLog)가 백엔드·화면 전부 완전히 끝났다.**
+
 ## 아직 안 한 것 (다음 단계)
-1. **DailyLog, TaskLog(일일 기록·업무별 진행 메모) 화면** — 백엔드가 기획서 3단계(아직 시작 안 함)라서 그게 먼저 필요함.
-2. 회원가입 시 이메일 형식/비밀번호 길이에 대한 프론트단 실시간 검증 메시지는 아직 없음(백엔드 400 에러 메시지에만 의존).
-3. `window.confirm()` 기반 확인창은 Claude의 브라우저 자동화로 "확인" 클릭을 재현할 수 없다는 한계가 계속 있음 — 필요하면 나중에 직접 만든 모달로 바꾸는 것도 고려 가능(지금은 우선순위 낮음).
-4. 업무 목록 필터링(상태·프로젝트·태그 등)과 페이징은 기획서 4단계 — 아직 손 안 댐.
+1. 회원가입 시 이메일 형식/비밀번호 길이에 대한 프론트단 실시간 검증 메시지는 아직 없음(백엔드 400 에러 메시지에만 의존).
+2. `window.confirm()` 기반 확인창은 Claude의 브라우저 자동화로 "확인" 클릭을 재현할 수 없다는 한계가 계속 있음 — 필요하면 나중에 직접 만든 모달로 바꾸는 것도 고려 가능(지금은 우선순위 낮음).
+3. 업무 목록 필터링(상태·프로젝트·태그 등)과 페이징은 기획서 4단계 — 아직 손 안 댐.
+4. `DailyLogPage`에서 업무를 고르는 드롭다운이 전체 업무 목록이라, 업무가 많아지면 찾기 어려워질 수 있음 — 4단계에서 검색/필터와 같이 다룰 만함.
 
 ## 테스트 계정
 - `test@example.com` / `test-password-1234` (원래 백엔드 시험용, 계속 씀)

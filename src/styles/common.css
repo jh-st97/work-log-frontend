@@ -59,6 +59,37 @@
 	box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
+/* textarea도 input과 같은 느낌으로 (회고, 진행 메모 내용처럼 여러 줄 입력에 씀) */
+.field textarea {
+	padding: 11px 14px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	font-size: 15px;
+	font-family: inherit;
+	resize: vertical;
+	background: var(--bg);
+	color: var(--text-h);
+	outline: none;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field textarea:focus {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+/* 일일 기록 화면의 날짜 이동 바에 있는 날짜 선택 입력 (버튼들과 나란히 놓임) */
+.field-date {
+	height: 41px;
+	padding: 0 14px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	font-size: 14px;
+	background: var(--bg);
+	color: var(--text-h);
+	outline: none;
+}
+
 /* 강조 버튼 (로그인, 회원가입 등 주요 동작) */
 .btn-primary {
 	width: 100%;

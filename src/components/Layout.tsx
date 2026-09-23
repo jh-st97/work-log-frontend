@@ -31,6 +31,9 @@ export function Layout() {
 						<NavLink to="/tasks" className="nav-link">
 							업무
 						</NavLink>
+						<NavLink to="/logs" className="nav-link">
+							일일 기록
+						</NavLink>
 					</nav>
 				</div>
 				<button className="btn-secondary" onClick={handleLogout}>
