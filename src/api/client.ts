@@ -1,3 +1,5 @@
+import { clearToken } from "../auth/token";
+
 // 백엔드 서버 주소. 나중에 배포하게 되면 이 값만 바꾸면 된다.
 const BASE_URL = "http://localhost:8080";
 
@@ -26,6 +28,12 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 	};
 
 	const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+
+	if (response.status === 401 && !path.startsWith("/api/auth/")) {
+		clearToken();
+		window.location.href = "/login";
+		throw new ApiError(401, "UNAUTHORIZED", "로그인이 만료되었습니다. 다시 로그인해주세요.");
+	}
 
 	// 상태 코드가 200번대가 아니면 (400, 401, 404, 409 등) 에러로 처리
 	if (!response.ok) {
