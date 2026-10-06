@@ -6,6 +6,7 @@ import { createTaskResult, deleteTaskResult, getTaskResults, updateTaskResult } 
 import { getProjects } from "../api/projects";
 import { getTags } from "../api/tags";
 import { getWorkSystems } from "../api/workSystems";
+import { getResumeMarkdown } from "../api/exports";
 import type { TaskResponse, TaskPriority, TaskStatus } from "../types/task";
 import type { TaskResultResponse } from "../types/taskResult";
 import type { ProjectResponse } from "../types/project";
@@ -72,6 +73,13 @@ export function TasksPage() {
 	const [totalPages, setTotalPages] = useState(0);
 	const [totalElements, setTotalElements] = useState(0);
 
+	// 이력서용 내보내기. 선택한 업무 번호는 페이지를 넘겨도 유지된다.
+	const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([]);
+	const [exportMarkdown, setExportMarkdown] = useState<string | null>(null);
+	const [exporting, setExporting] = useState(false);
+	const [exportError, setExportError] = useState<string | null>(null);
+	const [copied, setCopied] = useState(false);
+
 	// 폼에서 쓸 선택지들은 화면이 열릴 때 한 번만 불러온다
 	useEffect(() => {
 		getProjects().then(setProjects).catch(() => {});
@@ -116,6 +124,46 @@ export function TasksPage() {
 
 	function handleSearch() {
 		updateFilter(() => setKeyword(keywordInput));
+	}
+
+	function toggleSelectedTask(id: number) {
+		setSelectedTaskIds((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
+	}
+
+	async function handleExport() {
+		setExporting(true);
+		setExportError(null);
+		setCopied(false);
+
+		try {
+			const result = await getResumeMarkdown(selectedTaskIds);
+			setExportMarkdown(result.markdown);
+		} catch (e) {
+			setExportError(e instanceof ApiError ? e.message : "내보내기에 실패했습니다.");
+		} finally {
+			setExporting(false);
+		}
+	}
+
+	async function handleCopy() {
+		if (exportMarkdown === null) return;
+		try {
+			await navigator.clipboard.writeText(exportMarkdown);
+			setCopied(true);
+		} catch {
+			alert("복사에 실패했습니다. 미리보기 글을 직접 선택해서 복사해 주세요.");
+		}
+	}
+
+	// 마크다운 문자열을 파일로 만들어 내려받는다 (서버를 거치지 않고 브라우저에서 처리)
+	function handleDownload() {
+		if (exportMarkdown === null) return;
+		const url = URL.createObjectURL(new Blob([exportMarkdown], { type: "text/markdown;charset=utf-8" }));
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = "work-log-resume.md";
+		link.click();
+		URL.revokeObjectURL(url);
 	}
 
 	function resetFilters() {
@@ -401,6 +449,47 @@ export function TasksPage() {
 				</div>
 			</div>
 
+			{selectedTaskIds.length > 0 && (
+				<div className="card" style={{ maxWidth: "100%", marginBottom: 24 }}>
+					<div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+						<span style={{ fontSize: 14, color: "var(--text-h)" }}>{selectedTaskIds.length}개 업무 선택됨</span>
+						<button className="btn-primary" style={{ width: "auto" }} onClick={handleExport} disabled={exporting}>
+							{exporting ? "만드는 중..." : "이력서용 내보내기"}
+						</button>
+						<button className="btn-secondary" onClick={() => setSelectedTaskIds([])}>
+							선택 해제
+						</button>
+					</div>
+					{exportError && <p className="error-text">{exportError}</p>}
+				</div>
+			)}
+
+			{exportMarkdown !== null && (
+				<div className="card" style={{ maxWidth: "100%", marginBottom: 24 }}>
+					<h2 style={{ fontSize: 16, textAlign: "left", margin: "0 0 12px" }}>이력서용 마크다운 미리보기</h2>
+					<div className="field">
+						<textarea
+							readOnly
+							value={exportMarkdown}
+							rows={16}
+							style={{ fontFamily: "var(--mono)", fontSize: 13 }}
+						/>
+					</div>
+					<div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+						<button className="btn-primary" style={{ width: "auto" }} onClick={handleCopy}>
+							복사
+						</button>
+						<button className="btn-secondary" onClick={handleDownload}>
+							파일로 저장 (.md)
+						</button>
+						<button className="btn-secondary" onClick={() => setExportMarkdown(null)}>
+							닫기
+						</button>
+						{copied && <span style={{ fontSize: 13, color: "var(--accent)" }}>복사됐습니다</span>}
+					</div>
+				</div>
+			)}
+
 			{projects.length === 0 && !showForm && (
 				<p className="empty-state">업무를 등록하려면 먼저 프로젝트를 만들어야 해요.</p>
 			)}
@@ -578,6 +667,16 @@ export function TasksPage() {
 						<div className="list-item" key={task.id}>
 							<div className="list-item-top">
 								<div>
+									<label
+										style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text)" }}
+									>
+										<input
+											type="checkbox"
+											checked={selectedTaskIds.includes(task.id)}
+											onChange={() => toggleSelectedTask(task.id)}
+										/>
+										내보내기용 선택
+									</label>
 									<p className="list-item-title">{task.title}</p>
 									<p className="list-item-meta">
 										{project?.name ?? `프로젝트 #${task.projectId}`} · {priorityLabel(task.priority)}
