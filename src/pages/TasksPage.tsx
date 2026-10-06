@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { archiveTask, changeTaskStatus, createTask, getTasks, updateTask } from "../api/tasks";
+import { archiveTask, changeTaskStatus, createTask, getTasks, restoreTask, updateTask } from "../api/tasks";
 import type { TaskListParams } from "../api/tasks";
 import { createTaskResult, deleteTaskResult, getTaskResults, updateTaskResult } from "../api/taskResults";
 import { getProjects } from "../api/projects";
@@ -87,11 +87,14 @@ export function TasksPage() {
 		getWorkSystems().then(setSystems).catch(() => {});
 	}, []);
 
+	// true면 보관한 업무만 보여준다(보관함)
+	const [showArchived, setShowArchived] = useState(false);
+
 	// 필터나 페이지가 바뀔 때마다 목록을 다시 불러온다
 	useEffect(() => {
 		loadTasks();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [filterStatus, filterPriority, filterProjectId, filterSystemId, filterTagId, keyword, page]);
+	}, [filterStatus, filterPriority, filterProjectId, filterSystemId, filterTagId, keyword, showArchived, page]);
 
 	function loadTasks() {
 		setLoading(true);
@@ -103,6 +106,7 @@ export function TasksPage() {
 			systemId: filterSystemId === "" ? undefined : filterSystemId,
 			tagId: filterTagId === "" ? undefined : filterTagId,
 			keyword: keyword || undefined,
+			archived: showArchived,
 			page,
 		};
 
@@ -350,19 +354,42 @@ export function TasksPage() {
 		}
 	}
 
+	// 프로젝트가 보관 중이면 서버가 409로 막고 "프로젝트를 먼저 복구해 주세요"라고 알려준다
+	async function handleRestore(id: number) {
+		try {
+			await restoreTask(id);
+			loadTasks();
+		} catch (e) {
+			alert(e instanceof ApiError ? e.message : "복구에 실패했습니다.");
+		}
+	}
+
 	return (
 		<div className="page">
 			<div className="page-header">
-				<h1>업무</h1>
+				<h1>{showArchived ? "업무 보관함" : "업무"}</h1>
 				<button
 					className="btn-primary"
 					style={{ width: "auto" }}
 					onClick={() => (showForm ? closeForm() : openCreateForm())}
-					disabled={projects.length === 0}
+					disabled={projects.length === 0 || showArchived}
 				>
 					{showForm ? "취소" : "+ 새 업무"}
 				</button>
 			</div>
+
+			<label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, marginBottom: 16 }}>
+				<input
+					type="checkbox"
+					checked={showArchived}
+					onChange={(e) => {
+						setShowArchived(e.target.checked);
+						setPage(0);
+						closeForm();
+					}}
+				/>
+				보관함 보기
+			</label>
 
 			<div className="card" style={{ maxWidth: "100%", marginBottom: 24 }}>
 				<div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
@@ -698,21 +725,29 @@ export function TasksPage() {
 									{task.dueDate && <p className="list-item-meta">마감: {task.dueDate}</p>}
 								</div>
 								<div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
-									<select
-										className="status-select"
-										value={task.status}
-										onChange={(e) => handleStatusChange(task, e.target.value as TaskStatus)}
-									>
-										<option value="TODO">{statusLabel("TODO")}</option>
-										<option value="IN_PROGRESS">{statusLabel("IN_PROGRESS")}</option>
-										<option value="DONE">{statusLabel("DONE")}</option>
-									</select>
-									<button className="btn-secondary" onClick={() => openEditForm(task)}>
-										수정
-									</button>
-									<button className="btn-danger" onClick={() => handleArchive(task.id)}>
-										보관
-									</button>
+									{showArchived ? (
+										<button className="btn-secondary" onClick={() => handleRestore(task.id)}>
+											복구
+										</button>
+									) : (
+										<>
+											<select
+												className="status-select"
+												value={task.status}
+												onChange={(e) => handleStatusChange(task, e.target.value as TaskStatus)}
+											>
+												<option value="TODO">{statusLabel("TODO")}</option>
+												<option value="IN_PROGRESS">{statusLabel("IN_PROGRESS")}</option>
+												<option value="DONE">{statusLabel("DONE")}</option>
+											</select>
+											<button className="btn-secondary" onClick={() => openEditForm(task)}>
+												수정
+											</button>
+											<button className="btn-danger" onClick={() => handleArchive(task.id)}>
+												보관
+											</button>
+										</>
+									)}
 								</div>
 							</div>
 						</div>

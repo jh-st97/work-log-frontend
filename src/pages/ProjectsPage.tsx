@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { createProject, getProjects, archiveProject, updateProject } from "../api/projects";
+import { createProject, getProjects, archiveProject, restoreProject, updateProject } from "../api/projects";
 import type { ProjectResponse } from "../types/project";
 import { ApiError } from "../api/client";
 
@@ -28,13 +28,17 @@ export function ProjectsPage() {
 	const [submitting, setSubmitting] = useState(false);
 	const [formError, setFormError] = useState<string | null>(null);
 
+	// true면 보관한 프로젝트만 보여준다(보관함)
+	const [showArchived, setShowArchived] = useState(false);
+
 	useEffect(() => {
 		loadProjects();
-	}, []);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [showArchived]);
 
 	function loadProjects() {
 		setLoading(true);
-		getProjects()
+		getProjects(showArchived)
 			.then(setProjects)
 			.catch(() => setError("프로젝트 목록을 불러오지 못했습니다."))
 			.finally(() => setLoading(false));
@@ -114,18 +118,40 @@ export function ProjectsPage() {
 		}
 	}
 
+	async function handleRestore(id: number) {
+		try {
+			await restoreProject(id);
+			loadProjects();
+		} catch (e) {
+			alert(e instanceof ApiError ? e.message : "복구에 실패했습니다.");
+		}
+	}
+
 	return (
 		<div className="page">
 			<div className="page-header">
-				<h1>프로젝트</h1>
+				<h1>{showArchived ? "프로젝트 보관함" : "프로젝트"}</h1>
 				<button
 					className="btn-primary"
 					style={{ width: "auto" }}
 					onClick={() => (showForm ? closeForm() : openCreateForm())}
+					disabled={showArchived}
 				>
 					{showForm ? "취소" : "+ 새 프로젝트"}
 				</button>
 			</div>
+
+			<label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, marginBottom: 16 }}>
+				<input
+					type="checkbox"
+					checked={showArchived}
+					onChange={(e) => {
+						setShowArchived(e.target.checked);
+						closeForm();
+					}}
+				/>
+				보관함 보기
+			</label>
 
 			{showForm && (
 				<form onSubmit={handleSubmit} className="card" style={{ maxWidth: "100%", marginBottom: 24 }}>
@@ -185,7 +211,9 @@ export function ProjectsPage() {
 			{error && <p className="error-text">{error}</p>}
 
 			{!loading && !error && projects.length === 0 && (
-				<p className="empty-state">아직 프로젝트가 없습니다. 새 프로젝트를 등록해 보세요.</p>
+				<p className="empty-state">
+					{showArchived ? "보관한 프로젝트가 없습니다." : "아직 프로젝트가 없습니다. 새 프로젝트를 등록해 보세요."}
+				</p>
 			)}
 
 			<div className="list">
@@ -204,12 +232,20 @@ export function ProjectsPage() {
 								)}
 							</div>
 							<div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-								<button className="btn-secondary" onClick={() => openEditForm(project)}>
-									수정
-								</button>
-								<button className="btn-danger" onClick={() => handleArchive(project.id)}>
-									보관
-								</button>
+								{showArchived ? (
+									<button className="btn-secondary" onClick={() => handleRestore(project.id)}>
+										복구
+									</button>
+								) : (
+									<>
+										<button className="btn-secondary" onClick={() => openEditForm(project)}>
+											수정
+										</button>
+										<button className="btn-danger" onClick={() => handleArchive(project.id)}>
+											보관
+										</button>
+									</>
+								)}
 							</div>
 						</div>
 					</div>

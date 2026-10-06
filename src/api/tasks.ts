@@ -10,6 +10,8 @@ export interface TaskListParams {
 	systemId?: number;
 	tagId?: number;
 	keyword?: string;
+	// true면 보관한 업무만(보관함)
+	archived?: boolean;
 	page?: number;
 	size?: number;
 }
@@ -23,6 +25,7 @@ export function getTasks(params: TaskListParams = {}): Promise<Page<TaskResponse
 	if (params.systemId !== undefined) query.set("systemId", String(params.systemId));
 	if (params.tagId !== undefined) query.set("tagId", String(params.tagId));
 	if (params.keyword) query.set("keyword", params.keyword);
+	if (params.archived) query.set("archived", "true");
 	query.set("page", String(params.page ?? 0));
 	query.set("size", String(params.size ?? 20));
 
@@ -61,4 +64,9 @@ export function changeTaskStatus(id: number, request: TaskStatusRequest): Promis
 // DELETE /api/tasks/{id} : 실제로는 보관 처리
 export function archiveTask(id: number): Promise<void> {
 	return apiFetch<void>(`/api/tasks/${id}`, { method: "DELETE" });
+}
+
+// POST /api/tasks/{id}/restore : 보관한 업무 복구 (프로젝트가 보관 중이면 409)
+export function restoreTask(id: number): Promise<TaskResponse> {
+	return apiFetch<TaskResponse>(`/api/tasks/${id}/restore`, { method: "POST" });
 }
