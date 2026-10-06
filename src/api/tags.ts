@@ -1,9 +1,12 @@
 import { apiFetch } from "./client";
 import type { TagRequest, TagResponse } from "../types/tag";
+import type { Page } from "../types/page";
 
-// GET /api/tags : 내 태그 목록
-export function getTags(): Promise<TagResponse[]> {
-	return apiFetch<TagResponse[]>("/api/tags");
+// GET /api/tags : 내 태그 목록. 백엔드는 페이징으로 응답하지만, 체크박스·드롭다운에 전체가 필요해서
+// 넉넉하게(1000개) 받아 목록만 돌려준다.
+export async function getTags(): Promise<TagResponse[]> {
+	const page = await apiFetch<Page<TagResponse>>("/api/tags?size=1000");
+	return page.content;
 }
 
 // POST /api/tags : 태그 등록

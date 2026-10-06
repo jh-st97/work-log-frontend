@@ -1,9 +1,12 @@
 import { apiFetch } from "./client";
 import type { WorkSystemRequest, WorkSystemResponse } from "../types/workSystem";
+import type { Page } from "../types/page";
 
-// GET /api/systems : 내 업무 시스템 목록
-export function getWorkSystems(): Promise<WorkSystemResponse[]> {
-	return apiFetch<WorkSystemResponse[]>("/api/systems");
+// GET /api/systems : 내 업무 시스템 목록. 백엔드는 페이징으로 응답하지만, 체크박스·드롭다운에 전체가
+// 필요해서 넉넉하게(1000개) 받아 목록만 돌려준다.
+export async function getWorkSystems(): Promise<WorkSystemResponse[]> {
+	const page = await apiFetch<Page<WorkSystemResponse>>("/api/systems?size=1000");
+	return page.content;
 }
 
 // POST /api/systems : 업무 시스템 등록
