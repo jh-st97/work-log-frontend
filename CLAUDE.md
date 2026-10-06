@@ -88,6 +88,13 @@ src/
 
 **이걸로 기획서 3단계(DailyLog, TaskLog)가 백엔드·화면 전부 완전히 끝났다.**
 
+## 완료 (2026-09-27, 기획서 4단계 화면 — 업무 목록 필터·페이징)
+- 백엔드 `GET /api/tasks`가 `Page<TaskResponse>`로 바뀌어서 `types/page.ts`(`Page<T>`)를 새로 만들고, `api/tasks.ts`의 `getTasks(params)`가 `TaskListParams`(status, priority, projectId, systemId, tagId, keyword, page, size)를 `URLSearchParams`로 조립해 보냄(기본 `size=20`).
+- `TasksPage.tsx`에 필터 바 추가: 상태·우선순위·프로젝트·업무 시스템·태그 드롭다운(`.status-select` 재사용, "전체"는 값 `""`), 키워드 검색(입력값 `keywordInput`과 확정값 `keyword`를 분리해서 검색 버튼/Enter로만 요청), 필터 초기화 버튼. 필터가 바뀌면 `page`를 0으로 되돌림(`updateFilter`). 필터·페이지가 바뀔 때마다 `useEffect`로 목록을 다시 불러옴.
+- 목록 아래에 이전/다음 버튼과 "N / M 페이지 (총 K개)" 표시(`totalPages > 1`일 때만).
+- 업무 마감일 범위 필터(`dueDateFrom`/`dueDateTo`)는 백엔드엔 있지만 화면엔 아직 없음.
+- 테스트: `npx tsc --noEmit` 통과 + 브라우저로 우선순위·태그·키워드 필터(요청 URL 파라미터 확인), 필터 초기화, 21개 더미 업무로 2페이지 이동까지 확인 후 더미는 보관 처리로 정리.
+
 ## 아직 안 한 것 (다음 단계)
 1. 회원가입 시 이메일 형식/비밀번호 길이에 대한 프론트단 실시간 검증 메시지는 아직 없음(백엔드 400 에러 메시지에만 의존).
 2. `window.confirm()` 기반 확인창은 Claude의 브라우저 자동화로 "확인" 클릭을 재현할 수 없다는 한계가 계속 있음 — 필요하면 나중에 직접 만든 모달로 바꾸는 것도 고려 가능(지금은 우선순위 낮음).

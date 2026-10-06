@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { archiveTask, changeTaskStatus, createTask, getTasks, updateTask } from "../api/tasks";
+import type { TaskListParams } from "../api/tasks";
 import { createTaskResult, deleteTaskResult, getTaskResults, updateTaskResult } from "../api/taskResults";
 import { getProjects } from "../api/projects";
 import { getTags } from "../api/tags";
@@ -57,20 +58,75 @@ export function TasksPage() {
 	const [resultSubmitting, setResultSubmitting] = useState(false);
 	const [resultError, setResultError] = useState<string | null>(null);
 
+	// 목록 필터. status/priority/projectId/systemId/tagId는 ""면 "전체"(필터 안 걸음)를 뜻한다.
+	const [filterStatus, setFilterStatus] = useState<TaskStatus | "">("");
+	const [filterPriority, setFilterPriority] = useState<TaskPriority | "">("");
+	const [filterProjectId, setFilterProjectId] = useState<number | "">("");
+	const [filterSystemId, setFilterSystemId] = useState<number | "">("");
+	const [filterTagId, setFilterTagId] = useState<number | "">("");
+	const [keywordInput, setKeywordInput] = useState(""); // 입력 중인 값
+	const [keyword, setKeyword] = useState(""); // 실제로 검색에 쓰는 값 (검색 버튼/Enter로 확정)
+
+	// 페이징. page는 0부터 시작(백엔드와 동일)
+	const [page, setPage] = useState(0);
+	const [totalPages, setTotalPages] = useState(0);
+	const [totalElements, setTotalElements] = useState(0);
+
+	// 폼에서 쓸 선택지들은 화면이 열릴 때 한 번만 불러온다
 	useEffect(() => {
-		loadTasks();
-		// 폼에서 쓸 선택지들도 화면이 열릴 때 같이 불러온다
 		getProjects().then(setProjects).catch(() => {});
 		getTags().then(setTags).catch(() => {});
 		getWorkSystems().then(setSystems).catch(() => {});
 	}, []);
 
+	// 필터나 페이지가 바뀔 때마다 목록을 다시 불러온다
+	useEffect(() => {
+		loadTasks();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [filterStatus, filterPriority, filterProjectId, filterSystemId, filterTagId, keyword, page]);
+
 	function loadTasks() {
 		setLoading(true);
-		getTasks()
-			.then(setTasks)
+
+		const params: TaskListParams = {
+			status: filterStatus || undefined,
+			priority: filterPriority || undefined,
+			projectId: filterProjectId === "" ? undefined : filterProjectId,
+			systemId: filterSystemId === "" ? undefined : filterSystemId,
+			tagId: filterTagId === "" ? undefined : filterTagId,
+			keyword: keyword || undefined,
+			page,
+		};
+
+		getTasks(params)
+			.then((result) => {
+				setTasks(result.content);
+				setTotalPages(result.totalPages);
+				setTotalElements(result.totalElements);
+			})
 			.catch(() => setError("업무 목록을 불러오지 못했습니다."))
 			.finally(() => setLoading(false));
+	}
+
+	// 필터를 바꾸면 0페이지로 되돌아간다 — 필터링된 결과가 지금 보던 페이지보다 적을 수 있어서
+	function updateFilter(update: () => void) {
+		update();
+		setPage(0);
+	}
+
+	function handleSearch() {
+		updateFilter(() => setKeyword(keywordInput));
+	}
+
+	function resetFilters() {
+		setFilterStatus("");
+		setFilterPriority("");
+		setFilterProjectId("");
+		setFilterSystemId("");
+		setFilterTagId("");
+		setKeywordInput("");
+		setKeyword("");
+		setPage(0);
 	}
 
 	function openCreateForm() {
@@ -258,6 +314,91 @@ export function TasksPage() {
 				>
 					{showForm ? "취소" : "+ 새 업무"}
 				</button>
+			</div>
+
+			<div className="card" style={{ maxWidth: "100%", marginBottom: 24 }}>
+				<div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+					<select
+						className="status-select"
+						value={filterStatus}
+						onChange={(e) => updateFilter(() => setFilterStatus(e.target.value as TaskStatus | ""))}
+					>
+						<option value="">상태: 전체</option>
+						<option value="TODO">{statusLabel("TODO")}</option>
+						<option value="IN_PROGRESS">{statusLabel("IN_PROGRESS")}</option>
+						<option value="DONE">{statusLabel("DONE")}</option>
+					</select>
+
+					<select
+						className="status-select"
+						value={filterPriority}
+						onChange={(e) => updateFilter(() => setFilterPriority(e.target.value as TaskPriority | ""))}
+					>
+						<option value="">우선순위: 전체</option>
+						<option value="HIGH">높음</option>
+						<option value="MEDIUM">보통</option>
+						<option value="LOW">낮음</option>
+					</select>
+
+					<select
+						className="status-select"
+						value={filterProjectId}
+						onChange={(e) => updateFilter(() => setFilterProjectId(e.target.value ? Number(e.target.value) : ""))}
+					>
+						<option value="">프로젝트: 전체</option>
+						{projects.map((p) => (
+							<option key={p.id} value={p.id}>
+								{p.name}
+							</option>
+						))}
+					</select>
+
+					<select
+						className="status-select"
+						value={filterSystemId}
+						onChange={(e) => updateFilter(() => setFilterSystemId(e.target.value ? Number(e.target.value) : ""))}
+					>
+						<option value="">업무 시스템: 전체</option>
+						{systems.map((s) => (
+							<option key={s.id} value={s.id}>
+								{s.name}
+							</option>
+						))}
+					</select>
+
+					<select
+						className="status-select"
+						value={filterTagId}
+						onChange={(e) => updateFilter(() => setFilterTagId(e.target.value ? Number(e.target.value) : ""))}
+					>
+						<option value="">태그: 전체</option>
+						{tags.map((t) => (
+							<option key={t.id} value={t.id}>
+								{t.name}
+							</option>
+						))}
+					</select>
+
+					<input
+						value={keywordInput}
+						onChange={(e) => setKeywordInput(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+						placeholder="제목·설명 검색"
+						style={{
+							height: 41,
+							padding: "0 14px",
+							border: "1px solid var(--border)",
+							borderRadius: 10,
+							fontSize: 14,
+						}}
+					/>
+					<button className="btn-secondary" onClick={handleSearch}>
+						검색
+					</button>
+					<button className="btn-secondary" onClick={resetFilters}>
+						필터 초기화
+					</button>
+				</div>
 			</div>
 
 			{projects.length === 0 && !showForm && (
@@ -479,6 +620,24 @@ export function TasksPage() {
 					);
 				})}
 			</div>
+
+			{totalPages > 1 && (
+				<div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "center", marginTop: 20 }}>
+					<button className="btn-secondary" onClick={() => setPage((p) => p - 1)} disabled={page === 0}>
+						◀ 이전
+					</button>
+					<span style={{ fontSize: 14, color: "var(--text)" }}>
+						{page + 1} / {totalPages} 페이지 (총 {totalElements}개)
+					</span>
+					<button
+						className="btn-secondary"
+						onClick={() => setPage((p) => p + 1)}
+						disabled={page + 1 >= totalPages}
+					>
+						다음 ▶
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }
