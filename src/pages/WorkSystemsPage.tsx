@@ -85,7 +85,9 @@ export function WorkSystemsPage() {
 
 	async function handleDelete(id: number) {
 		// 태그와 마찬가지로 보관이 아니라 진짜 삭제
-		const confirmed = window.confirm("이 업무 시스템을 삭제할까요? 되돌릴 수 없습니다.");
+		const confirmed = window.confirm(
+			"이 업무 시스템을 삭제할까요? 이 시스템이 붙은 업무에서도 빠집니다(업무 자체는 그대로 남아요). 되돌릴 수 없습니다.",
+		);
 		if (!confirmed) return;
 
 		try {

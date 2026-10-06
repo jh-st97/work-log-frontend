@@ -51,7 +51,9 @@ export function TagsPage() {
 
 	async function handleDelete(id: number) {
 		// 태그는 보관이 아니라 진짜 삭제라서, 프로젝트보다 문구를 더 분명히 한다.
-		const confirmed = window.confirm("이 태그를 삭제할까요? 되돌릴 수 없습니다.");
+		const confirmed = window.confirm(
+			"이 태그를 삭제할까요? 이 태그가 붙은 업무에서도 빠집니다(업무 자체는 그대로 남아요). 되돌릴 수 없습니다.",
+		);
 		if (!confirmed) return;
 
 		try {
