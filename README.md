@@ -1,75 +1,83 @@
-# React + TypeScript + Vite
+# work-log-frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+업무를 관리하면서 기록을 쌓고, 이직할 때 이력서와 면접에서 꺼내 쓰는 개인용 업무 기록 서비스 [work-log](https://github.com/jh-st97/work-log)의 **프론트엔드**입니다.
+서비스 소개, 데이터 구조, API 명세는 백엔드 저장소 README를 참고하세요.
 
-Currently, two official plugins are available:
+## 화면
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**로그인 / 회원가입**
 
-## React Compiler
+- JWT 로그인
+- 토큰이 만료되면 자동으로 로그인 화면으로 이동
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**프로젝트**
 
-## Expanding the ESLint configuration
+- 조회, 등록, 수정, 보관
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**태그 / 업무 시스템**
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- 조회, 등록, 삭제
+- 이름을 눌러 바로 수정
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+**업무**
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- 필터: 상태, 우선순위, 프로젝트, 업무 시스템, 태그
+- 키워드 검색, 페이지 이동
+- 카드에서 바로 상태 변경
+- 성과 항목(지표명, 개선 전, 개선 후) 관리
 
+**일일 기록**
+
+- 날짜를 골라 하루 회고 저장
+- 그날의 업무별 진행 메모 등록·수정·삭제
+
+## 기술 스택
+
+- React, TypeScript, Vite
+- react-router-dom (라우팅, 로그인 보호)
+- 별도 HTTP 라이브러리 없이 브라우저 `fetch` 사용
+
+## 실행 방법
+
+백엔드가 먼저 실행 중이어야 합니다(`http://localhost:8080`).
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+- 접속: `http://localhost:5173`
+- **포트는 5173이어야 합니다.**
+  백엔드 CORS 설정이 이 주소만 허용합니다.
+  `npm run dev`를 두 번 실행하면 포트가 5174로 밀려 요청이 막히니 중복 실행을 확인하세요.
+- 백엔드 주소를 바꾸려면 `src/api/client.ts`의 `BASE_URL`을 수정합니다.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 구조
 
 ```
+src/
+├── api/        API 호출 함수 (client.ts가 공통 fetch 래퍼)
+├── auth/       토큰 저장(localStorage), 로그인 보호(RequireAuth)
+├── components/ 공통 레이아웃
+├── pages/      화면
+├── styles/     공통 스타일 (CSS 변수로 라이트/다크 모드 대응)
+└── types/      백엔드 응답·요청과 대응하는 타입
+```
+
+## 구현하면서 정리한 점
+
+- **공통 fetch 래퍼(`apiFetch`)**: 주소, 토큰 헤더, 에러 변환(`ApiError`), 204 응답 처리를 한 곳에서 합니다.
+  401 응답이 오면 저장된 토큰을 지우고 로그인 화면으로 보냅니다.
+  단, 로그인·가입 요청은 비밀번호 오류 메시지를 보여줘야 해서 예외로 둡니다.
+- **수정 화면은 등록 폼을 재사용**합니다(`editingId` 상태로 등록/수정 모드 분기).
+  필드가 하나뿐인 태그는 이름을 눌러 바로 수정하는 방식으로 구분했습니다.
+- **필터 조건이 바뀌면 0페이지로 되돌립니다.**
+  필터링 결과가 지금 보던 페이지보다 적을 수 있기 때문입니다.
+  검색어는 입력 중인 값과 확정된 값을 나눠서, 검색 버튼이나 Enter를 눌렀을 때만 요청합니다.
+- 백엔드 응답 타입(`Page<T>` 등)을 `src/types`에 정의해 화면에서 타입 검사를 받습니다.
+
+## 앞으로 할 일
+
+- 업무 목록의 마감일 범위 필터 화면
+- 회원가입 입력값 실시간 검증 메시지
+- `window.confirm` 확인창을 직접 만든 모달로 교체
